@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-
+import { Zoom } from "react-slideshow-image";
+import "react-slideshow-image/dist/styles.css";
 import "./index.css";
-import { getData, addData } from "../../lib/Api";
+import { getData, addData, getOnePokemon } from "../../lib/Api";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { getPokemonData } from "../../lib/Api";
@@ -21,17 +22,14 @@ export function Dropdowns() {
 	let [useFilter = filter[0].value, setFilter] = useState();
 	let [results, setResults] = useState([]);
 	let [useObject, setObject] = useState({
-		nombre: "",
-		razonSocial: "",
-		nit: "",
-		telefono: "",
-		codigo: "",
+		name: "",
+		img: [],
+		tipi: "",
 	});
 	let [useQuery, setQuery] = useState("");
 	let [usepopUp, setPopUp] = useState(false);
-	let [useButton, setUseButton] = useState(false);
-	let [usePage, setUsePage] = useState(1);
-	let [offset, setOffset] = useState(1);
+	let pokemon = {};
+
 	const { register, handleSubmit } = useForm();
 	const variants = {
 		open: (height = 1000) => ({
@@ -93,7 +91,6 @@ export function Dropdowns() {
 		window.addEventListener("scroll", handleScroll);
 	}, []);
 	const onSubmit = async (data) => {
-		setUsePage(1);
 		setQuery(data.q);
 
 		let lista = await getPokemonData(of);
@@ -101,62 +98,25 @@ export function Dropdowns() {
 		console.log("SOYLISTA", lista);
 		setResults(lista);
 	};
-	// async function fetchMorData(query) {
-	// 	console.log("SOY USEPAGE Y DEMAS", results, usePage);
-	// 	setIsLoading(true);
-	// 	getData(query, useFilter, usePage).then((res) => {
-	// 		if (results?.length === 0 || results === undefined) {
-	// 			console.log("PRIMER IF", results);
-	// 			setUseButton(true);
-	// 			setResults(res.results);
 
-	// 			return true;
-	// 		}
-	// 		console.log("Soy res", res);
-	// 		if (res.total_pages > usePage) {
-	// 			setResults((results) => results.concat(res.results));
-	// 			setUsePage((page) => page + 1);
-	// 		}
-
-	// 		setIsLoading(false);
-	// 	});
-	// }
-	// useEffect(() => {
-	// 	async function fetchData() {
-	// 		// You can await here
-	// 		// const response = await getPokemonData(useLimit - 20, useLimit);
-	// 		// console.log("Soy response", response);
-	// 		// setResults((results) => results.concat(response.results));
-	// 	}
-	// 	fetchData();
-	// }, [useLimit]);
 	function openPopUp() {
 		setObject({ [useFilter]: useQuery });
 	}
-	async function addObject(params) {
-		params.preventDefault();
 
-		let res = await addData({
-			nombre: params.target.nombre.value,
-			"razón social": params.target["razón social"].value,
-			nit: params.target.nit.value,
-			telefono: params.target.telefono.value,
-			codigo: params.target.codigo.value,
-		});
-		if (res.status === 200) {
-			swal("Datos Agregados Correctamente!!!", "", "success");
-			setPopUp(false);
-			return true;
-		} else {
-			swal("UPS!", "Algo paso", "error");
-			setPopUp(false);
-			return false;
-		}
-	}
 	function handleChange(e) {
 		setFilter(e.target.value);
 	}
-
+	async function mostrarCard(e) {
+		console.log("ESTOY POR MOSTRAR", e);
+		let dato = await getOnePokemon(e);
+		setPopUp(true);
+		console.log("SOY EL POKEMON", dato);
+		setObject({
+			name: dato.name,
+			tipo: dato.types[0].type.name,
+			img: [dato.sprites.front_default, dato.sprites.back_default],
+		});
+	}
 	return (
 		<div className={"mainContainer"}>
 			<div className="dropdownContainer">
@@ -165,54 +125,32 @@ export function Dropdowns() {
 				</form>
 				{usepopUp && (
 					<div className="backgroundForm">
-						<motion.form
+						<motion.div
 							animate={usepopUp === true ? "open" : "closed"}
 							variants={variants}
 							className="formContainer"
-							onSubmit={addObject}
 						>
-							<h3>Crear Registro</h3>
-							<input
-								className="inputForm"
-								placeholder="Nombre"
-								id={"nombre"}
-								defaultValue={useObject.nombre}
-								type={"text"}
-							></input>
+							<h2>{useObject.name}</h2>
+							<Zoom
+								indicators
+								onChange={function noRefCheck() {}}
+								className="imagenes"
+								scale={1.4}
+							>
+								<img
+									src={useObject.img[0]}
+									alt={"pokeimage"}
+									className="each-slide imagenes"
+								/>
+								<img
+									src={useObject.img[1]}
+									alt={"pokeimage"}
+									className="each-slide imagenes"
+								/>
+							</Zoom>
+							<h3> {useObject.tipo} </h3>
 
-							<input
-								className="inputForm"
-								id={"razón social"}
-								placeholder="Razón Social"
-								defaultValue={useObject.razonSocial}
-								type={"text"}
-							></input>
-
-							<input
-								className="inputForm"
-								placeholder="NIT"
-								id={"nit"}
-								defaultValue={useObject.nit}
-								type={"text"}
-							></input>
-
-							<input
-								className="inputForm"
-								placeholder="Telefono"
-								id={"telefono"}
-								defaultValue={useObject.telefono}
-								type={"text"}
-							></input>
-
-							<input
-								className="inputForm"
-								placeholder="Codigo"
-								id={"codigo"}
-								defaultValue={useObject.codigo}
-								type={"text"}
-							></input>
 							<div className="divFormButtons">
-								<button className="botonAñadir"> Añadir</button>
 								<button
 									type="cerrar"
 									className="buttonCerrar"
@@ -220,10 +158,10 @@ export function Dropdowns() {
 										setPopUp(false);
 									}}
 								>
-									cancelar
+									Cerrar
 								</button>{" "}
 							</div>
-						</motion.form>
+						</motion.div>
 					</div>
 				)}
 			</div>
@@ -233,7 +171,11 @@ export function Dropdowns() {
 					className={"resultsContenedor"}
 				>
 					{results?.map((i) => (
-						<div key={i.id} className={"resultsInfo"}>
+						<div
+							key={i.id}
+							className={"resultsInfo"}
+							onClick={() => mostrarCard(i.id)}
+						>
 							{" "}
 							<h2>
 								<b>{i.name}</b>
@@ -241,8 +183,13 @@ export function Dropdowns() {
 							<img
 								src={i.sprites.front_default}
 								alt={i.name}
-								className="pokeImage"
+								className="imagenes"
 							/>
+							{/* <img
+								src={i.sprites.front_default}
+								alt={i.name}
+								className="pokeImage"
+							/> */}
 							<h3>
 								<b>{i.types[0].type.name}</b>
 							</h3>

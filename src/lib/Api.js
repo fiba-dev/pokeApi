@@ -48,3 +48,11 @@ export async function getPokemonData(e) {
 	// 	pokemonImage.src = "";
 	// });
 }
+export async function getOnePokemon(e) {
+	let data = await fetch(apiUrl + "pokemon/" + e).then((res) => {
+		return res;
+	});
+	console.log(data);
+	let pokemon = await data.json();
+	return pokemon;
+}
